@@ -1,0 +1,164 @@
+<% include ../header%>
+
+	<body>
+		<div class="navbar navbar-default" id="navbar">
+			<script type="text/javascript">
+				try{ace.settings.check('navbar' , 'fixed')}catch(e){}
+			</script>
+
+            <%include ../navbar%>
+		</div>
+
+		<div class="main-container" id="main-container">
+			<script type="text/javascript">
+				try{ace.settings.check('main-container' , 'fixed')}catch(e){}
+			</script>
+
+			<div class="main-container-inner">
+				<a class="menu-toggler" id="menu-toggler" href="#">
+					<span class="menu-text"></span>
+				</a>
+
+				<%include ../left%>
+
+				<div class="main-content">
+					<div class="breadcrumbs" id="breadcrumbs">
+						<script type="text/javascript">
+							try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+						</script>
+
+						<ul class="breadcrumb">
+							<li>
+								<i class="icon-home home-icon"></i>
+								<a href="#">Home</a>
+							</li>
+
+							<li>
+								<a href="#">后台管理</a>
+							</li>
+							<li class="active">公司详情</li>
+						</ul><!-- .breadcrumb -->
+
+						<div class="nav-search" id="nav-search">
+							<form class="form-search">
+								<span class="input-icon">
+									<input type="text" placeholder="Search ..." class="nav-search-input" id="nav-search-input" autocomplete="off" />
+									<i class="icon-search nav-search-icon"></i>
+								</span>
+							</form>
+						</div><!-- #nav-search -->
+					</div>
+
+					<div class="page-content">
+						<div class="page-header">
+							<h1>
+                                公司详情
+							</h1>
+						</div><!-- /.page-header -->
+
+						<div class="row">
+							<div class="col-xs-12">
+								<!-- PAGE CONTENT BEGINS -->
+                                <% if(msg){%>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div id="w1-success-0" class="alert-success alert fade in">
+                                              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                                                <%=msg%>
+                                        </div>
+                                    </div>
+                                </div>
+                                <%}%>
+								<form class="form-horizontal" role="form" action="/admin/admin/companyUpdate" method="post">
+                                    <input type="hidden" name="CID" value="<%=data.CID%>"/>
+									<div class="form-group">
+										<label class="col-sm-2 control-label no-padding-right" for="form-field-1">公司名称</label>
+
+										<div class="col-sm-9">
+											<input type="text" name="CompanyName" class="col-xs-10 col-sm-5" value="<%=data.CompanyName%>" />
+										</div>
+									</div>
+
+									<div class="space-4"></div>
+
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label no-padding-right" for="form-field-1">公司地址</label>
+
+                                        <div class="col-sm-9">
+                                            <input type="text" name="Address" class="col-xs-10 col-sm-5" value="<%=data.Address%>"/>
+                                        </div>
+                                    </div>
+
+									<div class="space-4"></div>
+
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label no-padding-right" for="form-field-1">邀请码</label>
+
+                                        <div class="col-sm-9">
+                                            <input type="text" name="AddID" class="col-xs-10 col-sm-5" value="<%=data.AddID%>"/>
+                                        </div>
+                                    </div>
+
+									<div class="space-4"></div>
+
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label no-padding-right" for="form-field-1">公司状态</label>
+
+                                        <div class="col-sm-9">
+                                            <select class="col-xs-10 col-sm-5" name="Status">
+                                                <option value="1">审核通过</option>
+                                                <option value="2" <%if(data.Status==2){%>selected<%}%>>待审核</option>
+                                                <option value="3" <%if(data.Status==3){%>selected<%}%>>审核不通过</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label no-padding-right" for="form-field-1">公司证件</label>
+
+                                        <div class="col-sm-9">
+                                            <img src="<%=data.LicenseImage%>">
+                                            <input type="hidden" value="<%=data.LicenseImage%>" name="LicenseImage">
+                                        </div>
+                                    </div>
+
+									<div class="clearfix form-actions">
+										<div class="col-md-offset-3 col-md-9">
+											<button class="btn btn-info" type="submit">
+												<i class="icon-ok bigger-110"></i>
+												确定
+											</button>
+
+											&nbsp; &nbsp; &nbsp;
+											<button class="btn" type="reset">
+												<i class="icon-undo bigger-110"></i>
+												重置
+											</button>
+										</div>
+									</div>
+								</form>
+
+							</div><!-- /.col -->
+						</div><!-- /.row -->
+					</div><!-- /.page-content -->
+				</div><!-- /.main-content -->
+
+                <% include ../setting%>
+			</div><!-- /.main-container-inner -->
+
+			<a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse">
+				<i class="icon-double-angle-up icon-only bigger-110"></i>
+			</a>
+		</div><!-- /.main-container -->
+
+		<!-- basic scripts -->
+
+		<% include ../footer%>
+
+		<!-- inline scripts related to this page -->
+
+		<script type="text/javascript">
+
+		</script>
+</body>
+</html>
