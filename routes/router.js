@@ -55,6 +55,14 @@ module.exports  = function(app) {
     app.post('/api/k/member_clock_s',apiAuthContr.authApiSignToken,apiClockContr.memberClockStatistics);//员工一段时间的考勤统计
     app.post('/api/k/export_clock_s',apiAuthContr.authApiSignToken,apiClockContr.exportClockStatistics);//导出考勤统计信息
 
+    app.use(function(req,res,next){
+        var url = req.originalUrl;
+        if(url != "/admin/auth/login" && !req.session.username){
+            return res.redirect("/admin/auth/login");
+        }
+        next();
+    });
+
     app.all('/admin/*', function (req, res, next) {
         var menuid=0;
         if(req.query.menuid){
@@ -71,6 +79,7 @@ module.exports  = function(app) {
         });
     });
     app.all('/admin/auth/login', authContr.login);
+    app.all('/admin/auth/loginout', authContr.loginOut);
     app.all('/admin/admin/home', adminContr.home);
     app.all('/admin/admin/user', adminContr.user);
     app.all('/admin/admin/adminUserData', adminContr.adminUserData);
@@ -84,5 +93,8 @@ module.exports  = function(app) {
     app.all('/admin/admin/holidayData', adminContr.holidayData);
     app.all('/admin/kq/member', kqContr.member);
     app.all('/admin/kq/memberData', kqContr.memberData);
+    app.all('/admin/kq/records', kqContr.records);
+    app.all('/admin/kq/recordsData', kqContr.recordsData);
+
 
 };

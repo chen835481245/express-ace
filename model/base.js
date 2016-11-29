@@ -14,6 +14,9 @@ exports.getMenus = function (menuid,callback) {
         if (err) return done(err, null);
         var arr = {};
         for(var i in rows){
+            if(rows[i]['Nullity']==1){
+                continue;
+            }
             rows[i]['Class']='';
             if(rows[i]['ParentID']==0){
                 var tmpKey=rows[i]['ModuleID'];
@@ -27,7 +30,9 @@ exports.getMenus = function (menuid,callback) {
                     rows[i]['Class']='active';
                     arr[tmpKey]['parent']['Class']='active open';
                 }
-                arr[tmpKey]['subMenu'].push(rows[i]);
+                if(arr[tmpKey]){
+                    arr[tmpKey]['subMenu'].push(rows[i]);
+                }
             }
         }
         callback(null,arr);

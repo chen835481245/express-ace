@@ -49,12 +49,17 @@ var config = {
         check_sign_error: 104,
         param_token_error: 105,
         account_exist: 106,
-        ocr_fail: 110,
-        record_not_found : 107,
+        account_forbid: 107,
+        add_company_already: 108,
         apple_verify_error: 109,
         auth_code_invalid: 110,//验证码无效
         auth_code_expired: 111,//验证码已经过期
+        send_auth_code_error : 112,//发送短信验证码失败
+        add_company_not_yet: 113,//还未加入公司
+        not_company_admin: 114,//不是公司的管理员
+        branch_has_accounts: 115,//部门下面还有用户
         data_not_found:121 ,
+        data_exist:122 ,
         param_image_error: 201,
         account_pass_error: 200,
     },
@@ -76,10 +81,10 @@ var config = {
 if(config.env === 'development') {//如果是开发模式
     config.mysql= {
         connectionLimit: 10,
-        host:'114.55.101.177',
+        host:'127.0.0.1',
         user: 'root',
         dateStrings: true,//解决日期格式化问题
-        password: 'cdc!@#$%^xlj',
+        password: '',
         database: 'express_kq',
     };
 }

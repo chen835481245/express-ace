@@ -17,6 +17,7 @@
     "ejs": "^2.5.1",
     "express": "^4.14.0",
     "express-session": "^1.14.2",
+    "iconv-lite": "^0.4.13",
     "moment": "^2.14.1",
     "multer": "^1.2.0",
     "mysql": "^2.11.1",

@@ -1,3 +1,4 @@
+
 <% include ../header%>
 <link rel="stylesheet" href="/assets/css/DT_bootstrap.css" />
 <body>
@@ -64,25 +65,29 @@
                                         <option value="<%=row.CID%>"><%=row.CompanyName%></option>
                                         <% }) %>
                                     </select>
+                                    日期：
+                                    <input class="date-picker" id="beginDate" type="text" data-date-format="yyyy-mm-dd">
+                                    -
+                                    <input class="date-picker" id="endDate" type="text" data-date-format="yyyy-mm-dd">
+
                                     <input type="button" value="查询" class="btn btn-sm btn-yellow" style="float: right;" onclick="getList();">
                                 </div>
                                 <div class="table-header">
-                                    管理员列表
+                                    考勤记录
                                 </div>
                                 <div class="table-responsive">
                                     <table id="myTable" class="table table-striped table-bordered table-hover">
                                         <thead>
                                         <tr>
+                                            <th>姓名</th>
                                             <th>公司</th>
-                                            <th>部门</th>
-                                            <th>昵称</th>
-                                            <th>名称</th>
-                                            <th>电话</th>
-                                            <th>性别</th>
-                                            <th>注册时间</th>
-                                            <th>最后操作时间</th>
-                                            <th>状态</th>
-                                            <!--<th>操作</th>-->
+                                            <th>日期</th>
+                                            <th>上班时间</th>
+                                            <th>下班时间</th>
+                                            <th>工作（小时）</th>
+                                            <th>加班（小时）</th>
+                                            <th>上班照片</th>
+                                            <th>下班照片</th>
                                         </tr>
                                         </thead>
                                     </table>
@@ -101,76 +106,88 @@
         <i class="icon-double-angle-up icon-only bigger-110"></i>
     </a>
 </div><!-- /.main-container -->
-
 <%include ../footer%>
 <script src="/assets/js/jquery.dataTables.min.js"></script>
 <script src="/assets/js/jquery.dataTables.bootstrap.js"></script>
 
-
+<script src="/assets/js/date-time/bootstrap-datepicker.min.js"></script>
 <!-- inline scripts related to this page -->
 
+
+
+
 <script type="text/javascript">
-    $(document).ready(function() {
-        getList();
+    $(function(){
+        $('.date-picker').datepicker({autoclose:true}).next().on(ace.click_event, function(){
+            $(this).focus();
+        });
     });
+
+    var table = $('#myTable').DataTable({
+        "processing": true,
+        "serverSide": true,
+        "ordering": false,
+        "bDestroy":true,
+        //"iDisplayStart":1,//第几条开始
+        //"oSearch":{"sSearch":""},
+        "ajax": {
+            "url": "/admin/kq/recordsData",
+            "data": function ( d ) {
+                d.CID = $("#CID").val();
+                d.beginDate = $("#beginDate").val();
+                d.endDate = $("#endDate").val();
+            },
+            "async":false,//这里为了showImg显示图片才改为同步，一般用true
+        },
+        "aoColumns":
+                [
+                    { "mData": "Name" },
+                    { "mData": "CompanyName" },
+                    { "mData": "ClockDate" },
+                    { "mData": "FirstClock" },
+                    { "mData": "LastClock" },
+                    { "mData":"WorkTimes","mRender":function(data,type,full)
+                    {
+                        var str=data/3600;
+                        return  str.toFixed(2);
+                    }
+                    },
+                    { "mData":"OverTimes","mRender":function(data,type,full)
+                    {
+                        var str=data/3600;
+                        return  str.toFixed(2);
+                    }
+                    },
+                    { "mData":"FirstImage","mRender":function(data,type,full)
+                    {
+                        var str='';
+                        if(data){
+                            str+="<button type=\"button\" class=\"btn btn-success btn-sm img_show\" title=\"\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"auto\" data-content=\"<img style='width: 300px;max-width:100%' src='"+data+"' /> \"  data-original-title=\"\">照片</button>";
+                        }
+                        return  str;
+                    }
+                    },
+                    { "mData":"LastImage","mRender":function(data,type,full)
+                    {
+                        var str='';
+                        if(data){
+                            return "<img src='"+data+"' style='width:100px;'/>";
+                        }
+                        return  str;
+                    }
+                    },
+                ],
+    });
+
+    imgPopover();
     function getList()
     {
-        $("#myTable tbody").remove();
-        $('#myTable').DataTable( {
-            "processing": true,
-            "serverSide": true,
-            "ordering": false,
-            "bDestroy":true,
-            //"iDisplayStart":1,//第几条开始
-            //"oSearch":{"sSearch":""},
-            "ajax": {
-                "url": "/admin/kq/memberData",
-                "data": function ( d ) {
-                    d.CID = $("#CID").val();
-                }
-            },
-            "aoColumns":
-                    [
-                        { "mData": "CompanyName" },
-                        { "mData": "BranchName" },
-                        { "mData": "Nickname" },
-                        { "mData": "Name" },
-                        { "mData": "Phone" },
-                        { "mData":"Gender","mRender":function(data,type,full)
-                        {
-                            var str='未知';
-                            if(data=='1'){
-                                str='男';
-                            }
-                            if(data=='2'){
-                                str='女';
-                            }
-                            return str;
-                        }
-                        },
-                        { "mData": "RegTime" },
-                        { "mData": "LastLoginTime" },
-                        { "mData":"Status","mRender":function(data,type,full)
-                        {
-                            var str='';
-                            if(data=='1'){
-                                str='正常';
-                            }else{
-                                str='禁用';
-                            }
-                            return str;
-                        }
-                        },
-                        /*                            { "mData":null,"mRender":function(data,type,full)
-                         {
-                         var str='';
-                         str+="<a href='#'  title='修改' onclick=\"modifyFun("+data.id+","+data.goods_category+")\"><i class='icon-edit'></i></a>&nbsp;";
-                         str+="<a href='#portlet-config' data-toggle='modal'  title='删除' onclick='deleteId("+data.id+")'><i class='icon-trash'></i></a>&nbsp;";
-                         return str;
-                         }
-                         },*/
-                    ],
-        });
+        table.ajax.reload();
+        imgPopover();
+    }
+    function imgPopover()
+    {
+        $("[data-toggle='popover']").popover({'html':true,'trigger':'hover click'});
     }
 </script>
 </body>

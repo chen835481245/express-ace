@@ -47,7 +47,13 @@ exports.authApiSignToken = function (req, res, next) {
         return next(new ApplicationError.JsonResponse('校验签名失败', Config.error_code.check_sign_error));
     }
     //TODO  token的校验
-    next();
+    DaoFactory.getMemberDao().getData({Token:postData.Token},function (err, row) {
+        if(err) return next(new ApplicationError.JsonResponse('获取数据出错', Config.error_code.system_error));
+        if(!row) return next(new ApplicationError.JsonResponse('没有找到用户信息', Config.error_code.token_invalid));
+        if(row.Status==2) next(new ApplicationError.JsonResponse('用户被禁用了', Config.error_code.account_forbid));
+        req.memberInfo = row;
+        next();
+    })
 }
 
 function checkSign(postData) {

@@ -9,8 +9,11 @@ var Moment  = require('moment');
 exports.checkLogin = function (req, res, next) {
     var postData = req.body;
     var phone = postData.Phone;
-    var imgBuff= new Buffer(postData.Image,'Base64');//活体照片数据
+    if(!phone||!(/^1[34578]\d{9}$/.test(phone))) return next(new ApplicationError.JsonResponse('手机号码参数有误', Config.error_code.param_error));
     var uuid = postData.UUID;
+    if(!uuid||uuid.length!=32) return next(new ApplicationError.JsonResponse('手机UUID 参数不对', Config.error_code.param_error));
+    if(!postData.Image||postData.Image.length<100) return next(new ApplicationError.JsonResponse('图片数据不对', Config.error_code.param_error));
+    var imgBuff= new Buffer(postData.Image,'Base64');//活体照片数据
     //处理流程 通过手机号码查询用户是否存在
     //如果不存在就返回走注册流程
     MemberMod.getMemberWithFacesInfo({Phone:phone},function (g_m_err, memberInfo) {
@@ -54,8 +57,9 @@ exports.checkLogin = function (req, res, next) {
 //发送验证码接口
 exports.authCode = function (req, res, next) {
     var postData = req.body;
+    var type = postData.Type||login;//login
     var phone = postData.Phone;
-    var type = postData.Type;//login
+    if(!phone||!(/^1[34578]\d{9}$/.test(phone))) return next(new ApplicationError.JsonResponse('手机号码参数有误', Config.error_code.param_error));
     var code = CommonFun.rd(100000,999999);
     var message= code+' (考勤APP手机验证码,请完成验证),如非本人操作,请忽略本短信。';
     MemberMod.sendAuthCode(phone,message,code,type,function (err) {
@@ -66,9 +70,12 @@ exports.authCode = function (req, res, next) {
 //验证短信验证码添加照片注册
 exports.codeRegister = function (req, res, next) {
     var postData = req.body;
-    var phone = postData.Phone;
     var authCode = postData.AuthCode;
+    var phone = postData.Phone;
+    if(!phone||!(/^1[34578]\d{9}$/.test(phone))) return next(new ApplicationError.JsonResponse('手机号码参数有误', Config.error_code.param_error));
     var uuid = postData.UUID;
+    if(!uuid||uuid.length!=32) return next(new ApplicationError.JsonResponse('手机UUID 参数不对', Config.error_code.param_error));
+    if(!postData.Image||postData.Image.length<100) return next(new ApplicationError.JsonResponse('图片数据不会', Config.error_code.param_error));
     var imgBuff= new Buffer(postData.Image,'Base64');//活体照片数据
     MemberMod.verifyAuthCode(phone,authCode,'login',function (err) {
         if(err) return next(new ApplicationError.JsonResponse(err.message,err.error_code));
@@ -94,25 +101,79 @@ exports.codeRegister = function (req, res, next) {
 //验证短信验证码添加照片登录接口
 exports.codeAddFaceLogin = function (req, res, next) {
     var postData = req.body;
-    var phone = postData.Phone;
-    var type = postData.Type;//login
     var authCode = postData.AuthCode;
+    var phone = postData.Phone;
+    if(!phone||!(/^1[34578]\d{9}$/.test(phone))) return next(new ApplicationError.JsonResponse('手机号码参数有误', Config.error_code.param_error));
     var uuid = postData.UUID;
+    if(!uuid||uuid.length!=32) return next(new ApplicationError.JsonResponse('手机UUID 参数不对', Config.error_code.param_error));
+    if(!postData.Image||postData.Image.length<100) return next(new ApplicationError.JsonResponse('图片数据不对', Config.error_code.param_error));
     var imgBuff= new Buffer(postData.Image,'Base64');//活体照片数据
     MemberMod.verifyAuthCode(phone,authCode,'login',function (err) {
         if(err) return next(new ApplicationError.JsonResponse(err.message,err.error_code));
+        MemberMod.addFaceLogin(phone,imgBuff,uuid,function (r_err, memberInfo) {
+            if(r_err) return next(new ApplicationError.JsonResponse(r_err.message,r_err.error_code));
+            var retVal = {
+                Token:memberInfo.Token,
+                Info:{
+                    Name:memberInfo.Name||'',
+                    Phone:memberInfo.Phone,
+                    Status:memberInfo.Status||1,
+                    CID:memberInfo.CID||0,
+                    BID:memberInfo.BID||0,
+                    Avatar:memberInfo.Avatar||'',
+                    StaffRole:memberInfo.StaffRole||0,
+                }
+            };
+            res.send(retVal);
 
+        })
     })
 
 };
 //验证短信验证码登录接口
 exports.codeLogin = function (req, res, next) {
-
+    var postData = req.body;
+    var authCode = postData.AuthCode;
+    var phone = postData.Phone;
+    if(!phone||!(/^1[34578]\d{9}$/.test(phone))) return next(new ApplicationError.JsonResponse('手机号码参数有误', Config.error_code.param_error));
+    var uuid = postData.UUID;
+    if(!uuid||uuid.length!=32) return next(new ApplicationError.JsonResponse('手机UUID 参数不对', Config.error_code.param_error));
+    MemberMod.verifyAuthCode(phone,authCode,'login',function (err) {
+        if(err) return next(new ApplicationError.JsonResponse(err.message,err.error_code));
+        MemberMod.codeLogin(phone,uuid,function (l_err, memberInfo) {
+            if(l_err) return next(new ApplicationError.JsonResponse(l_err.message,l_err.error_code));
+            var retVal = {
+                Token:memberInfo.Token,
+                Info:{
+                    Name:memberInfo.Name||'',
+                    Phone:memberInfo.Phone,
+                    Status:memberInfo.Status||1,
+                    CID:memberInfo.CID||0,
+                    BID:memberInfo.BID||0,
+                    Avatar:memberInfo.Avatar||'',
+                    StaffRole:memberInfo.StaffRole||0,
+                }
+            };
+            res.send(retVal);
+        })
+    })
 };
 
 //邀请码后加入公司接口
 exports.registerAddCompany = function (req, res, next) {
-
+    var memberInfo = req.memberInfo;
+    var postData = req.body;
+    if(!postData.CID||!postData.BID||!postData.Name)
+    {
+        return next(new ApplicationError.JsonResponse('参数未填写完整',Config.error_code.param_error));
+    }
+    if(memberInfo.CID){
+        return next(new ApplicationError.JsonResponse('用户已经加入了公司',Config.error_code.add_company_already));
+    }
+    MemberMod.joinCompany(memberInfo,postData,function (j_err,ret) {
+        if(j_err) return next(new ApplicationError.JsonResponse(j_err.message,j_err.error_code));
+        res.send(ret);
+    })
 };
 //用户获取自己的信息
 exports.myInfo = function (req, res, next) {

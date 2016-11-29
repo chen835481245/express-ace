@@ -156,34 +156,6 @@ Base.prototype.getCount = function (where, callback, field)
         callback(null, row[0]['num']);
     });
 }
-Base.prototype.getArray = function (where, callback, fields)
-{
-    var whereField = '';
-    if( whereField = CommonFun.toWhereFields(where))
-    {
-        whereField= ' where '+ whereField;
-    }
-    if(!fields){
-        return callback('fields error', null);
-    }
-    selectFields = CommonFun.implode(',',fields);
-    var selectSql = "SELECT "+selectFields+"  from "+this.table + whereField ;
-    MysqlQuery(selectSql, function (err, rows, fields) {
-        if (err) {
-            Logger.log('error', selectSql, err);
-            return callback(err, null);
-        }
-        var data ={};
-        for(var i in rows){
-            var fieldKey = fields[0];
-            var fieldval = fields[1];
-            var key = row[i][fieldKey];
-            var val = row[i][fieldval];
-            data[key]=val;
-        }
-        callback(null, data);
-    });
-}
 module.exports = Base;
 
 

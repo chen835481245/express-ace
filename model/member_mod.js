@@ -2,6 +2,7 @@ var DaoFactory = require('../proxy');
 var Config = require('../config/config')
 var ApplicationError = require('../lib/application_error');
 var FacevisaServer =  require('../servers/facevisa');
+var SendAuthCodeServer = require('../servers/send_auth_code');
 var Moment = require('moment');
 var CommonFun = require('../lib/common');
 var FileManager = require('../lib/file_manage');
@@ -32,7 +33,18 @@ exports.faceLogin = function (personID, imgBuff, callback) {
 }
 //发送短信验证码
 exports.sendAuthCode = function (phone, message, code, type, callback) {
-    
+    SendAuthCodeServer.send([phone],message,function (err) {
+        if(err) return callback(err);
+        DaoFactory.getAuthCodeDao().insertData({
+            Code:code,
+            Type:type,
+            Phone:phone,
+            AddTime:Moment().format('YYYY-MM-DD HH:mm:ss')
+        },function (err) {
+            if(err) return callback(new ApplicationError.CodeResponse('插入数据失败',Config.error_code.system_error));
+            callback(null);
+        })
+    })
     
 }
 //校验短信验证码
@@ -81,6 +93,42 @@ exports.register = function (phone, imgBuff, uuid, callback) {
         })
     })
 }
+exports.codeLogin = function (phone,uuid,callback) {
+    DaoFactory.getMemberDao().getData({Phone:phone},function (g_m_err, row) {
+        if(g_m_err) return callback(new ApplicationError.CodeResponse('获取用户信息失败',Config.error_code.system_error));
+        if(!row) return callback(new ApplicationError.CodeResponse('获取用户用户信息没有找到',Config.error_code.data_not_found));
+        row.Token = CommonFun.generateToken(row.PersonID,20);
+        row.UUID = uuid;
+        row.LoginCnt = row.LoginCnt+1;
+        row.LastLoginTime = Moment().format("YYYY-MM-DD HH:mm:ss");
+        DaoFactory.getMemberDao().updateData({MID:row.MID},row,function (err) {
+            if(err) callback(new ApplicationError.CodeResponse('更新用户数据失败',Config.error_code.system_error));
+            callback(null,row);
+        })
+    })
+
+}
+exports.addFaceLogin = function (phone, imgBuff, uuid, callback) {
+    var now = Moment();
+    DaoFactory.getMemberDao().getData({Phone:phone},function (err, row) {
+        if(err) return callback(new ApplicationError.CodeResponse('获取用户信息失败',Config.error_code.system_error));
+        if(!row) return callback(new ApplicationError.CodeResponse('获取用户用户信息没有找到',Config.error_code.data_not_found));
+        addFace(row['MID'],row['PersonID'],imgBuff,function (i_f_err,faceItem) {
+            if(i_f_err) Logger.log('error',i_f_err.message,i_f_err);
+            row.Token = CommonFun.generateToken(row.PersonID,20);
+            row.UUID = uuid;
+            row.LoginCnt = row.LoginCnt+1;
+            row.LastLoginTime = Moment().format("YYYY-MM-DD HH:mm:ss");
+            DaoFactory.getMemberDao().updateData({MID:row.MID},row,function (err) {
+                if(err) callback(new ApplicationError.CodeResponse('更新用户数据失败',Config.error_code.system_error));
+                callback(null,row);
+            })
+        })
+    })
+}
+
+
+
 //添加更多的照片 校验
 exports.addMoreFace = function (personID, imgBuff, callback) {
 
@@ -114,3 +162,50 @@ function addFace(MID,personID, imgBuff, callback) {
     })
 }
 exports.addFace = addFace;
+
+exports.joinCompany = function (memberInfo, postData, callback) {
+    DaoFactory.getCompanyDao().getData({CID:postData.CID},function (c_err, row) {
+        if(c_err) callback(new ApplicationError.CodeResponse('查找公司信息失败',Config.error_code.system_error));
+        if(!row) callback(new ApplicationError.CodeResponse('找不到公司信息',Config.error_code.system_error));
+    })
+    var updateData = {
+        CID:postData.CID,
+        BID:postData.BID,
+        Name:postData.Name,
+        StaffRole:Config.staff_status.apply_staff
+    }
+    var now = Moment();
+    if(postData.Image){
+        var imgBuff = new Buffer(postData.Image,'Base64');
+        var tempPath = '/upload/avatar/'+now.format('YYYY-MM-DD')+'/';
+        var dbPath = tempPath+now.format('x')+''+CommonFun.rd(1000,999)+'.jpg';
+        updateData.Avatar = dbPath;
+        FileManager.mkPath(Config.states_path+tempPath,function (m_err) {
+            if(m_err) return Logger.log('error',m_err);
+            Fs.writeFile(Config.states_path+dbPath,imgBuff, function (s_err) {
+                if(s_err) Logger.log('error','存储照片失败',m_err);
+            })
+
+        })
+    }
+    DaoFactory.getMemberDao().updateData({MID:memberInfo.MID},updateData,function (u_m_err, packet) {
+        if(u_m_err) callback(new ApplicationError.CodeResponse('更新用户数据失败',Config.error_code.system_error));
+        callback(null,updateData);
+    })
+    if(postData.FaceImg){
+        try {
+            var faceImgArray = JSON.parse(postData.FaceImg);
+        }catch (e)
+        {
+            return Logger.log('error','添加人脸照片失败');
+        }
+        for(var i in faceImgArray)
+        {
+            var tempBuff = new Buffer(faceImgArray[i],'Base64');
+            addFace(memberInfo['MID'],memberInfo['PersonID'],imgBuff,function (err, item) {
+                if(err) Logger.log('error','添加照片失败',err);
+            })
+        }
+    }
+
+}
